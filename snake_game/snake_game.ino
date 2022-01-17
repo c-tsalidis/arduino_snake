@@ -6,7 +6,11 @@ int CS = 7;
 int CLK = 13;
 LedControl lc=LedControl(DIN, CLK, CS,0);
 
+int foodX, foodY;
 int row = 0, column = 0, x = 0, y = 0, previousX = 0, previousY = 0;
+int score = 0;
+
+int gridSize = 8; // the grid is an 8x8 matrix of LEDs
 
 void setup() {
   // joystick pins
@@ -18,11 +22,12 @@ void setup() {
   lc.setIntensity(0,0);
   lc.clearDisplay(0);
 
-  // Serial.begin(9600);
+  Serial.begin(9600);
 
 }
 void loop() {
   lc.clearDisplay(0);
+  
   x = map(analogRead(A0), 0, 1000, -1, 1); // read X axis value [0..1023]
   y = map(analogRead(A1), 1100, 0, -1, 1); // read Y axis value [0..1023]
   
@@ -32,7 +37,15 @@ void loop() {
   else if(y < 0 && y != previousY) column = calculateConstrainedIndex(column - 1);
   x = previousX;
   y = previousY;
-  
+
+  // check if the head is in same position as food
+  if(foodX == row && foodY == column) {
+    score++;
+    Serial.print("Score: "); Serial.println(score);
+    setFoodPos(); // reset the position of food
+  }
+
+  drawLed(foodX, foodY);
   drawLed(row, column);
   // Serial.print(row); Serial.print(" | "); Serial.println(column);
   delay(100);
@@ -45,8 +58,22 @@ void drawLed(int row, int column) {
 
 // in case the index is outside of the matrix array, recalculate it so it appears on the other side
 int calculateConstrainedIndex(int index) {
-  int gridConstrain = 7;
-  if (index > gridConstrain ) index = gridConstrain + 1 - index;
-  else if (index < 0) index = gridConstrain + 1 + index;
+  if (index > gridSize - 1) index = gridSize - index;
+  else if (index < 0) index = gridSize + index;
   return index;
+}
+
+void setFoodPos() {
+  bool foundSpot = false;
+  int counter = 0;
+  while(!foundSpot) {
+    int randX = random(0, gridSize);
+    int randY = random(0, gridSize);
+    if(randX != foodX && randY != foodY) {
+      foodX = randX;
+      foodY = randY;
+    }
+    counter++;
+    if(counter >= gridSize*gridSize) break; // the user won the game cause there are no free spots
+  }
 }

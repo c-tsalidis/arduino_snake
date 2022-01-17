@@ -8,6 +8,7 @@ LedControl lc=LedControl(DIN, CLK, CS,0);
 
 int foodX, foodY;
 int row = 0, column = 0, x = 0, y = 0, previousX = 0, previousY = 0;
+int xDirection = 1, yDirection = 0;
 int score = 0;
 
 int gridSize = 8; // the grid is an 8x8 matrix of LEDs
@@ -27,14 +28,19 @@ void setup() {
 }
 void loop() {
   lc.clearDisplay(0);
-  
+
+  // get input from joystick
   x = map(analogRead(A0), 0, 1000, -1, 1); // read X axis value [0..1023]
   y = map(analogRead(A1), 1100, 0, -1, 1); // read Y axis value [0..1023]
-  
-  if(x > 0 && x != previousX) row = calculateConstrainedIndex(row + 1);
-  else if(x < 0 && x != previousX) row = calculateConstrainedIndex(row - 1);
-  else if(y > 0  && y != previousY) column = calculateConstrainedIndex(column + 1);
-  else if(y < 0 && y != previousY) column = calculateConstrainedIndex(column - 1);
+
+  // move head
+  if(x > 0 && x != previousX) { xDirection = 1; yDirection = 0; }
+  else if(x < 0 && x != previousX) { xDirection = -1; yDirection = 0; }
+  else if(y > 0  && y != previousY) { xDirection = 0; yDirection = 1; }
+  else if(y < 0 && y != previousY) { xDirection = 0; yDirection = -1; }
+  // else if(x== 0 && y == 0) { xDirection = 0; yDirection = 0; }
+  row = calculateConstrainedIndex(row + xDirection); 
+  column = calculateConstrainedIndex(column + yDirection);
   x = previousX;
   y = previousY;
 
@@ -45,10 +51,12 @@ void loop() {
     setFoodPos(); // reset the position of food
   }
 
+  // draw food, head, body parts
   drawLed(foodX, foodY);
   drawLed(row, column);
+  
   // Serial.print(row); Serial.print(" | "); Serial.println(column);
-  delay(100);
+  delay(200);
 }
 
 // turn the led at [row, column] on
